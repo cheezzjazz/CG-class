@@ -40,12 +40,8 @@ void Render()
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
-
-	gluOrtho2D(-25.0f, 25.0f, -5.0f, 45.0f);
 
 	//Draw ground
 	if (ground != NULL)
@@ -53,8 +49,7 @@ void Render()
 		// get position and angle by body(ground)
 		b2Vec2 position = ground->GetPosition();
 		float32 angle = ground->GetAngle();
-
-		glMatrixMode(GL_MODELVIEW);
+				
 		glPushMatrix();
 		glTranslatef(position.x, position.y, 0.0f);	// Translation
 		glRotatef(angle, 0.0f, 0.0f, 1.0f);			// Rotation
@@ -79,7 +74,6 @@ void Render()
 			b2Vec2 pos = box->GetPosition();
 			float32 ang = box->GetAngle();
 
-			glMatrixMode(GL_MODELVIEW);
 			glPushMatrix();
 			glTranslatef(pos.x, pos.y, 0.0f);	// Translation
 			glRotatef(ang, 0.0f, 0.0f, 1.0f);	// Rotation
@@ -102,9 +96,7 @@ void Render()
 			//Body Box_1
 			b2Vec2 pos1 = body1->GetPosition();
 			float a1 = body1->GetAngle();
-
-			glMatrixMode(GL_MODELVIEW);
-
+		
 			glPushMatrix();
 			glTranslatef(pos1.x, pos1.y, 0.0f);
 			glRotatef(a1, 0.0f, 0.0f, 1.0f);
@@ -118,12 +110,11 @@ void Render()
 			}
 			glEnd();
 			glPopMatrix();
+
 			//Body Box_2
 			b2Vec2 pos2 = body2->GetPosition();
 			float a2 = body2->GetAngle();
-
-			glMatrixMode(GL_MODELVIEW);
-
+			
 			glPushMatrix();
 			glTranslatef(pos2.x, pos2.y, 0.0f);
 			glRotatef(a2, 0.0f, 0.0f, 1.0f);
@@ -139,16 +130,13 @@ void Render()
 			glPopMatrix();
 
 			//Draw the string
-			glMatrixMode(GL_MODELVIEW);
 			glPushMatrix();
 			glColor3f(0.8f, 0.8f, 0.8f);
 
 			glLineWidth(1.0f);
-			glBegin(GL_LINES);
+			glBegin(GL_LINE_STRIP);
 			glVertex2d(m_joint->GetAnchorA().x, m_joint->GetAnchorA().y);
 			glVertex2d(m_joint->GetGroundAnchorA().x, m_joint->GetGroundAnchorA().y);
-			glVertex2d(m_joint->GetGroundAnchorA().x, m_joint->GetGroundAnchorA().y);
-			glVertex2d(m_joint->GetGroundAnchorB().x, m_joint->GetGroundAnchorB().y);
 			glVertex2d(m_joint->GetGroundAnchorB().x, m_joint->GetGroundAnchorB().y);
 			glVertex2d(m_joint->GetAnchorB().x, m_joint->GetAnchorB().y);
 			glEnd();
@@ -177,12 +165,19 @@ void Update(int value)
 	glutTimerFunc(20, Update, 0);	//Recursive function
 }
 
-
+// triggered when a window is reshaped.
 void Reshape(int _width, int _height)
 {
 	scr_width = _width;
 	scr_height = _height;
+	
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	gluOrtho2D(-25.0f, 25.0f, -5.0f, 45.0f);
+
 	glViewport(0, 0, _width, _height);
+
+	glutPostRedisplay();
 }
 
 void Setup()
@@ -217,8 +212,7 @@ void Setup()
 		// Step4 : create Fixture
 		b2FixtureDef boxfd;
 		boxfd.shape = &boxshape;
-		boxfd.density = 1.0f;
-		boxfd.restitution = 0.0f;
+		boxfd.density = 1.0f;		//Generally Density = 1
 		// Step5 : Attach shape to body with fixture
 		body->CreateFixture(&boxfd);
 		box = body;
@@ -227,9 +221,6 @@ void Setup()
 	case mypulley:
 	{
 		// Joint
-		// body _ box size
-		float32 box_w = 2.0f;
-		float32 box_h = 2.0f;
 		// need ground anchor1,2 / anchor1,2
 		b2Vec2 groundanchor1, groundanchor2;
 		b2Vec2 anchor1, anchor2;
@@ -239,11 +230,11 @@ void Setup()
 		groundanchor2.Set(10.0f, 35.0f);
 
 		//set length of pulleys
-		float length = 40.0f;
-		float Length = 0.0f;
-		float distance = b2Distance(groundanchor1, groundanchor2);
-		if (length > distance)
-			Length = (length - distance) / 2;
+		float short_length = 10.0f;
+		
+		// body _ box size
+		float32 box_w = 2.0f;
+		float32 box_h = 2.0f;
 
 		//create the shape of body
 		boxshape.SetAsBox(box_w, box_h);
@@ -251,22 +242,23 @@ void Setup()
 		//create Fixture of body
 		b2BodyDef bd;				// you can reuse one bodydef for 2 body
 		bd.type = b2_dynamicBody;
-		bd.position.Set(groundanchor1.x, groundanchor1.y - Length - box_h);
+		bd.position.Set(groundanchor1.x, groundanchor1.y - short_length - box_h);
 		body1 = world->CreateBody(&bd);
 		body1->CreateFixture(&boxshape, 0.5f);	//set different density of body 1
 
-		bd.position.Set(groundanchor2.x, groundanchor2.y - Length - box_h);
+		bd.position.Set(groundanchor2.x, groundanchor2.y - short_length - box_h);
 		body2 = world->CreateBody(&bd);
 		body2->CreateFixture(&boxshape, 0.4f); //set different density of body 2
 
-											   // define and create pulleys joint
+		// define and create pulleys joint
+		float ratio = 1.0f;	//the constraint force is same. [length 1 + ratio * length2 == constant]
 		b2PulleyJointDef pulleyDef;
-		anchor1.Set(groundanchor1.x, groundanchor1.y - Length);
-		anchor2.Set(groundanchor2.x, groundanchor2.y - Length);
-		pulleyDef.Initialize(body1, body2, groundanchor1, groundanchor2, anchor1, anchor2, 1.5f);
+		anchor1.Set(groundanchor1.x, groundanchor1.y - short_length);
+		anchor2.Set(groundanchor2.x, groundanchor2.y - short_length);
+		pulleyDef.Initialize(body1, body2, groundanchor1, groundanchor2, anchor1, anchor2, ratio);
 		m_joint = (b2PulleyJoint*)world->CreateJoint(&pulleyDef);
 	}
-		break;
+	break;
 	default:
 		break;
 	}
