@@ -268,6 +268,9 @@ void Setup()
 
 void Dokeyboard(unsigned char key, int x, int y)
 {
+	int x_force = 200;
+	int y_force = 500*100;
+
 	switch (key)
 	{
 	case 'g':
@@ -281,12 +284,32 @@ void Dokeyboard(unsigned char key, int x, int y)
 	case 's':
 		bstart = true;
 		break;
+	case 'e':
+		box->ApplyForce(b2Vec2(y_force,0 ), b2Vec2(-20.0, 0), true);
 	default:
 		break;
 	}
 	glutPostRedisplay();
 }
+/*
+void Dokeyboard(unsigned char key, int x, int y)
+{
+	int x_force = 20000;
+	int y_force = 50000;
 
+	switch (key)
+	{
+		// apply impulse force to box
+	case 'q':
+		box->ApplyForce(b2Vec2(-x_force, y_force), box->GetWorldCenter(), true);
+		break;
+	case 'e':
+		box->ApplyForce(b2Vec2(x_force, y_force), box->GetWorldCenter(), true);
+	default:
+		break;
+	}
+	glutPostRedisplay();
+}*/
 int main(int argc, char** argv)
 {
 	// Initialize glut
